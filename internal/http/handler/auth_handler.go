@@ -1,16 +1,17 @@
 package handler
 
 import (
-	"auth_app/internal/app/auth"
 	"auth_app/internal/dto"
-	"auth_app/internal/http/validators"
+	"auth_app/internal/service"
 	"encoding/json"
+	"errors"
 	"github.com/go-chi/chi/v5"
 	"net/http"
 )
 
-func RegisterAuthHandlers(r chi.Router, authService *auth.Auth) {
+func RegisterAuthHandlers(r chi.Router, authService *service.AuthService) {
 	r.Post("/register", func(w http.ResponseWriter, r *http.Request) {
+		const op = "Register new user handler"
 		var reqBody dto.RegisterRequest
 
 		if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
@@ -18,26 +19,21 @@ func RegisterAuthHandlers(r chi.Router, authService *auth.Auth) {
 			return
 		}
 
-		if err := validators.ValidateStruct(reqBody); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+		user, err := authService.RegisterUser(reqBody)
+		if err != nil {
+			var vErr service.ValidationError
+			if errors.As(err, &vErr) {
+				http.Error(w, vErr.Error(), http.StatusBadRequest)
+				return
+			}
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
 
-		user, err := authService.Register(reqBody)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		response, err := json.Marshal(user)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
 		w.Header().Set("Content-Type", "application/json")
 
-		_, err = w.Write(response)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+		if err := json.NewEncoder(w).Encode(user); err != nil {
+			http.Error(w, "Failed to write response", http.StatusInternalServerError)
 		}
 	})
 }
