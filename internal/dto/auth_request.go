@@ -8,3 +8,8 @@ type RegisterRequest struct {
 	PasswordConfirm string `json:"password_confirm" validate:"required,eqfield=Password"`
 	Phone           string `json:"phone" validate:"required,max=20"`
 }
+
+type LoginRequest struct {
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required,min=8,max=20"`
+}

@@ -11,6 +11,7 @@ type Config struct {
 	MigrationsPath string        `yaml:"migrations_path"`
 	TokenTTL       time.Duration `yaml:"token_ttl" env-default:"1h"`
 	Port           string        `yaml:"port" env-default:"8081"`
+	AppSecret      string        `yaml:"app_secret" env-default:"secret"`
 	Database       Database
 }
 type Database struct {
@@ -21,6 +22,10 @@ type Database struct {
 	Port     int    `yaml:"port" env-default:"5432"`
 	Sslmode  string `yaml:"sslmode" env-default:"sslmode"`
 	Host     string `yaml:"host" env-default:"http://localhost"`
+}
+
+type AppSecret struct {
+	Secret string `yaml:"app_secret" env-default:"secret"`
 }
 
 func MustLoad() *Config {
@@ -39,6 +44,23 @@ func MustLoadFromPath(path string) *Config {
 		panic(err)
 	}
 	return &cfg
+}
+
+func GetSecretKey() string {
+	secretKey := os.Getenv("SECRET_KEY")
+	if secretKey == "" {
+		var secret AppSecret
+		path := getFilePath()
+		if _, err := os.Stat(path); os.IsNotExist(err) {
+			panic("config file not found: " + path)
+		}
+		err := cleanenv.ReadConfig(path, &secret)
+		if err != nil {
+			panic(err)
+		}
+		secretKey = secret.Secret
+	}
+	return secretKey
 }
 
 func getFilePath() string {
