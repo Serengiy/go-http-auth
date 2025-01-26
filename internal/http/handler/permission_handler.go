@@ -3,12 +3,15 @@ package handler
 import (
 	"auth_app/internal/dto"
 	"auth_app/internal/packages/pagination"
+	"auth_app/internal/packages/response"
 	"auth_app/internal/service"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/go-chi/chi/v5"
+	"gorm.io/gorm"
 	"net/http"
+	"strconv"
 )
 
 func RegisterPermissionHandlers(r chi.Router, permissionService *service.PermissionService) {
@@ -62,16 +65,76 @@ func RegisterPermissionHandlers(r chi.Router, permissionService *service.Permiss
 		}
 		fmt.Printf("name: %s, perpage: %v, page: %v \n", filters.Name, filters.PerPage, filters.Page)
 
-		permissions, err := permissionService.GetPermissionsByFilter(filters)
+		permissions, totalRecords, err := permissionService.GetPermissionsByFilter(filters)
 
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(permissions); err != nil {
+		permPagination := &response.Pagination{
+			Page:       int64(page),
+			PerPage:    int64(perPage),
+			TotalPages: pagination.GetTotalPages(totalRecords, perPage),
+		}
+
+		err = response.PaginatedJSON(w, 200, permissions, "", permPagination)
+
+		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	})
+
+	r.Get("/permissions/{id}", func(w http.ResponseWriter, r *http.Request) {
+		idParam := chi.URLParam(r, "id")
+
+		permID, err := strconv.Atoi(idParam)
+		if err != nil {
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+
+		permission, err := permissionService.GetPermissionById(int64(permID))
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+				return
+			}
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+
+		if err := response.JSON(w, 200, permission, ""); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	})
+
+	r.Delete("/permissions/{id}", func(w http.ResponseWriter, r *http.Request) {
+		idParam := chi.URLParam(r, "id")
+		permID, err := strconv.Atoi(idParam)
+		if err != nil {
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		}
+		permission, err := permissionService.GetPermissionById(int64(permID))
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+				return
+			}
+		}
+
+		err = permissionService.DeletePermissionById(permission)
+		if err != nil {
+			http.Error(w, http.StatusText(500), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		err = response.JSON(w, 200, "", fmt.Sprintf("Permission with ID: %v deleted successfully", idParam))
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
 	})
 }

@@ -50,12 +50,34 @@ func (s *PermissionService) CreateNewPermission(reqBody *dto.PermissionStoreRequ
 	return permission, nil
 }
 
-func (s *PermissionService) GetPermissionsByFilter(filters dto.PermissionFilterStruct) ([]models.Permission, error) {
+func (s *PermissionService) GetPermissionsByFilter(filters dto.PermissionFilterStruct) ([]models.Permission, int64, error) {
 	const op = "service.PermissionService.GetPermissionsByFilter"
 
-	permissions, err := s.rep.GetPermissions(&filters)
+	permissions, totalRecords, err := s.rep.GetPermissions(&filters)
+	if err != nil {
+		return nil, 0, err
+	}
+	return permissions, totalRecords, nil
+}
+
+func (s *PermissionService) GetPermissionById(id int64) (*models.Permission, error) {
+	const op = "service.PermissionService.GetPermissionById"
+
+	permission, err := s.rep.FindPermissionByID(id)
+
 	if err != nil {
 		return nil, err
 	}
-	return permissions, nil
+
+	return permission, nil
+}
+
+func (s *PermissionService) DeletePermissionById(permission *models.Permission) error {
+	const op = "service.PermissionService.DeletePermissionById"
+
+	err := s.rep.DeletePermissionByID(int64(permission.ID))
+	if err != nil {
+		return err
+	}
+	return nil
 }

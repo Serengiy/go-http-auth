@@ -38,3 +38,7 @@ func Paginate(param string) (int, error) {
 	}
 	return page, nil
 }
+
+func GetTotalPages(totalRecords int64, perPage int) int64 {
+	return (totalRecords + int64(perPage) - 1) / int64(perPage)
+}
