@@ -75,3 +75,10 @@ func (p *Permission) DeletePermissionByID(id int64) error {
 	}
 	return nil
 }
+
+func (p *Permission) UpdatePermission(permission *models.Permission) error {
+	if err := p.DB.Save(permission).Error; err != nil {
+		return err
+	}
+	return nil
+}

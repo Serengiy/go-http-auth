@@ -12,6 +12,7 @@ import (
 	"gorm.io/gorm"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 func RegisterPermissionHandlers(r chi.Router, permissionService *service.PermissionService) {
@@ -132,6 +133,49 @@ func RegisterPermissionHandlers(r chi.Router, permissionService *service.Permiss
 
 		w.Header().Set("Content-Type", "application/json")
 		err = response.JSON(w, 200, "", fmt.Sprintf("Permission with ID: %v deleted successfully", idParam))
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	})
+
+	r.Put("/permissions/{id}", func(w http.ResponseWriter, r *http.Request) {
+		var reqBody dto.PermissionUpdateRequest
+		err := json.NewDecoder(r.Body).Decode(&reqBody)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		idParam := chi.URLParam(r, "id")
+		permID, err := strconv.Atoi(idParam)
+		if err != nil {
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+
+		permission, err := permissionService.GetPermissionById(int64(permID))
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+				return
+			}
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+
+		permission, err = permissionService.UpdatePermission(permission, &reqBody)
+
+		if err != nil {
+			if strings.Contains(err.Error(), "already exists") {
+				http.Error(w, err.Error(), http.StatusConflict)
+				return
+			}
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+
+		err = response.JSON(w, 200, permission, "")
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

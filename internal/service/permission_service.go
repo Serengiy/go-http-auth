@@ -81,3 +81,30 @@ func (s *PermissionService) DeletePermissionById(permission *models.Permission) 
 	}
 	return nil
 }
+
+func (s *PermissionService) UpdatePermission(permission *models.Permission, reqBody *dto.PermissionUpdateRequest) (*models.Permission, error) {
+	const op = "service.PermissionService.UpdatePermissionById"
+
+	err := validators.ValidateStruct(reqBody)
+	if err != nil {
+		return nil, ValidationError{Message: "Validation failed: " + err.Error()}
+	}
+
+	existingPermission, err := s.rep.FindPermissionByName(reqBody.Name)
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, err
+	}
+
+	if existingPermission != nil && existingPermission.ID != permission.ID {
+		return nil, fmt.Errorf("permission with the name '%s' already exists", reqBody.Name)
+	}
+
+	permission.Name = reqBody.Name
+
+	err = s.rep.UpdatePermission(permission)
+	if err != nil {
+		return nil, err
+	}
+
+	return permission, nil
+}
