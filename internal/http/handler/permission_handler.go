@@ -131,7 +131,6 @@ func RegisterPermissionHandlers(r chi.Router, permissionService *service.Permiss
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
 		err = response.JSON(w, 200, "", fmt.Sprintf("Permission with ID: %v deleted successfully", idParam))
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

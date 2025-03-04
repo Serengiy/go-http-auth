@@ -19,14 +19,14 @@ func main() {
 	validators.InitiateValidator()
 
 	authService := service.NewAuthService(repository.NewAuthRepository(repository.DB))
-	roleService := service.NewPermissionService(repository.NewPermissionRepository(repository.DB))
-	//permissionService := permission.NewPermissionService(repository.DB)
+	permissionService := service.NewPermissionService(repository.NewPermissionRepository(repository.DB))
+	roleService := service.NewRoleService(repository.NewRoleRepository(repository.DB))
 
 	r := chi.NewRouter()
 
 	handler.RegisterAuthHandlers(r, authService)
-	handler.RegisterPermissionHandlers(r, roleService)
-	//handler.RegisterPermissionHandlers(r, permissionService)
+	handler.RegisterPermissionHandlers(r, permissionService)
+	handler.RegisterRoleHandler(r, roleService, permissionService)
 
 	log.Printf("Server running on %s", cfg.Port)
 	err := http.ListenAndServe(fmt.Sprintf(":%s", cfg.Port), r)
