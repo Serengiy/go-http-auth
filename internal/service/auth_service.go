@@ -13,10 +13,19 @@ import (
 )
 
 type AuthService struct {
-	rep *repository.User
+	rep *repository.Auth
 }
 
-func NewAuthService(authRepo *repository.User) *AuthService {
+type JWTClaims struct {
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	UserId    uint   `json:"user_id"`
+	ExpiresAt int64  `json:"expires_at"`
+	Iat       int64  `json:"iat"`
+	jwt.StandardClaims
+}
+
+func NewAuthService(authRepo *repository.Auth) *AuthService {
 	return &AuthService{
 		rep: authRepo,
 	}
@@ -99,12 +108,12 @@ func generateToken(user *models.User) (string, error) {
 
 	secretKey := []byte(config.GetSecretKey())
 
-	claims := jwt.MapClaims{
-		"firstName": user.FirstName,
-		"lastName":  user.LastName,
-		"userId":    user.ID,
-		"exp":       time.Now().Add(time.Hour).Unix(),
-		"iat":       time.Now().Unix(),
+	claims := JWTClaims{
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		UserId:    user.ID,
+		ExpiresAt: time.Now().Add(time.Hour).Unix(),
+		Iat:       time.Now().Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)

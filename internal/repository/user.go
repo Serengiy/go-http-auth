@@ -6,24 +6,24 @@ import (
 	"gorm.io/gorm"
 )
 
-type Auth struct {
+type User struct {
 	DB *gorm.DB
 }
 
-func NewAuthRepository(db *gorm.DB) *Auth {
-	return &Auth{
+func NewUserRepository(db *gorm.DB) *User {
+	return &User{
 		DB: db,
 	}
 }
 
-func (repo *Auth) CreateNewUser(user *models.User) error {
+func (repo *User) CreateNewUser(user *models.User) error {
 	if user == nil {
 		return fmt.Errorf("user cannot be nil")
 	}
 	return repo.DB.Create(user).Error
 }
 
-func (repo *Auth) FindUserByEmail(email string) (*models.User, error) {
+func (repo *User) FindUserByEmail(email string) (*models.User, error) {
 	var user models.User
 	err := repo.DB.Where("email = ?", email).First(&user).Error
 	if err != nil {

@@ -15,7 +15,7 @@ import (
 	"strings"
 )
 
-func RegisterPermissionHandlers(r chi.Router, permissionService *service.PermissionService) {
+func registerPermissionHandlers(r chi.Router, permissionService *service.PermissionService) {
 	r.Post("/permissions", func(w http.ResponseWriter, r *http.Request) {
 		var reqBody dto.PermissionStoreRequest
 

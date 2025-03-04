@@ -12,7 +12,7 @@ import (
 	"strconv"
 )
 
-func RegisterRoleHandler(r chi.Router, roleService *service.RoleService, permissionService *service.PermissionService) {
+func registerRoleHandler(r chi.Router, roleService *service.RoleService, permissionService *service.PermissionService) {
 	r.Post("/roles", func(w http.ResponseWriter, r *http.Request) {
 		const op = "create new role"
 		var reqBody dto.RoleRequest

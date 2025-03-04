@@ -9,7 +9,7 @@ import (
 	"net/http"
 )
 
-func RegisterAuthHandlers(r chi.Router, authService *service.AuthService) {
+func registerAuthHandlers(r chi.Router, authService *service.AuthService) {
 	r.Post("/register", func(w http.ResponseWriter, r *http.Request) {
 		const op = "Register new user handler"
 		var reqBody dto.RegisterRequest
